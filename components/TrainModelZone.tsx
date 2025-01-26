@@ -116,20 +116,28 @@ export default function TrainModelZone({ packSlug }: { packSlug: string }) {
 
   const trainModel = useCallback(async () => {
     setIsLoading(true);
-    // Upload each file to Vercel blob and store the resulting URLs
-    const blobUrls = [];
+    const blobUrls: string[] = [];
 
-    if (files) {
-      for (const file of files) {
-        const blob = await upload(file.name, file, {
-          access: "public",
-          handleUploadUrl: "/astria/train-model/image-upload",
+    if (files?.length) {
+      try {
+        for (const file of files) {
+          const blob = await upload(file.name, file, {
+            access: "public",
+            handleUploadUrl: "/astria/train-model/image-upload",
+          });
+          blobUrls.push(blob.url);
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "Failed to upload image",
+          duration: 5000,
         });
-        blobUrls.push(blob.url);
+        setIsLoading(false);
+        return;
       }
     }
-
-    // console.log(blobUrls, "blobUrls");
 
     const payload = {
       urls: blobUrls,
@@ -179,7 +187,7 @@ export default function TrainModelZone({ packSlug }: { packSlug: string }) {
     });
 
     router.push("/");
-  }, [files]);
+  }, [files, form, packSlug, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
